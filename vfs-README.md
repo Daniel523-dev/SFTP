@@ -1,6 +1,6 @@
 # POSIX Virtual File System (VFS)
 
-A Python-based FUSE (Filesystem in Userspace) bridge designed for POSIX-compliant operating systems (Linux, macOS). This module translates standard OS-level file operations into Python method calls, allowing you to mount custom storage backends`like an in-memory dictionary or a remote encrypted server`as a standard local directory.
+A Python-based FUSE (Filesystem in Userspace) bridge designed for POSIX-compliant operating systems (Linux). This module translates standard OS-level file operations into Python method calls, allowing you to mount custom storage backends`like an in-memory dictionary or a remote encrypted server`as a standard local directory.
 
 ## Core Components
 
@@ -9,13 +9,13 @@ A Python-based FUSE (Filesystem in Userspace) bridge designed for POSIX-complian
 
 ## How It Fits In
 
-In the context of the Secure File Server/Client ecosystem, this script serves as the Linux/macOS mounting backend. While the default `SharedStorage` runs purely in RAM, the `StorageFUSE` class is designed to accept *any* storage object that implements the same methods. 
+In the context of the Secure File Server/Client ecosystem, this script serves as the Linux mounting backend. While the default `SharedStorage` runs purely in RAM, the `StorageFUSE` class is designed to accept *any* storage object that implements the same methods. 
 
 For example, the `client.py` script injects its `RemoteStorage` network class into `StorageFUSE`, mapping network requests directly to local file explorer actions.
 
 ## Requirements
 
-*   **OS:** A POSIX-compliant operating system (Linux, macOS). Windows is explicitly blocked and will raise a `RuntimeError`.
+*   **OS:** A POSIX-compliant operating system (Linux). Windows is explicitly blocked and will raise a `RuntimeError`.
 *   **System Packages:** `libfuse` must be installed on your OS (e.g., `sudo apt install libfuse2` on Ubuntu).
 *   **Python Packages:** The `fusepy` library is required to interface with FUSE.
 
