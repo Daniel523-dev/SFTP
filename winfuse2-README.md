@@ -369,6 +369,10 @@ IT WORKS.
 
 DO NOT TOUCH THE BLACK MAGIC.
 ```
+## winfuse2.py was reused from my winFUSE repository
+```url
+https://github.com/Daniel523-dev/winFUSE/
+```
 
 ## License
 
