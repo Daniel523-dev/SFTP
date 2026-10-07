@@ -34,7 +34,7 @@ Clients can interact with the server by sending packets with the following `cmd`
 You can run the server directly from the command line. It will prompt you for the necessary passwords to secure the server's long-term keys and authorize new clients.
 
 ```bash
-python file_server.py
+python server.py
 ```
 
 *Expected Output:*
