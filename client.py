@@ -1,4 +1,4 @@
-import json, os, sys, getpass
+import json, os, sys, getpass, traceback
 CHUNK_SIZE = 12 * 1024 * 1024
 if sys.platform == "win32":
     import winfuse2 as mount_backend
@@ -52,7 +52,8 @@ class RemoteStorage:
         if not os.path.exists(key_path):raise FileNotFoundError(f"Key file not found: {key_path}")
         if not password:password = getpass.getpass("Client password: ")
         import network
-        self.client = network.TCPClient(host=host,port=port,password=password,auth_key=key_path,auth_key_password_callback=auth_key_password_callback)
+        try:self.client = network.TCPClient(host=host,port=port,password=password,auth_key=key_path,auth_key_password_callback=auth_key_password_callback)
+        except Exception as e:traceback.print_exception(e);raise OSError
         self.lock = __import__("threading").Lock()
         self.callbacks = {"read": None, "write": None, "delete": None, "mkdir": None}
     def initialize(self):pass
@@ -152,8 +153,28 @@ class RemoteStorage:
 def auth_key_password_callback():return getpass.getpass('Auth Key Password: ')
 if __name__ == "__main__":
     key_path = sys.argv[1] if len(sys.argv) > 1 else "./auth_key"
-    password = getpass.getpass("Client password: ")
-    storage = RemoteStorage(key_path=key_path,password=password,auth_key_password_callback=auth_key_password_callback)
+    TPM=False
+    try:import TPM_client;TPM=True
+    except:pass
+    password=None
+    if TPM:
+        try:
+            c=TPM_client.TPMClient()
+            password=c.get_bytes('SFTP client password')['value'].decode("ascii")
+        except ConnectionError:print('Failed to connect to TPM server. Is TPM.exe running?')
+        except:pass
+    retry=True
+    retrys=10
+    while retry and retrys>0:
+        retrys-=1
+        retry=False
+        if password==None:password = getpass.getpass("Client password: ")
+        try:storage = RemoteStorage(key_path=key_path,password=password,auth_key_password_callback=auth_key_password_callback)
+        except OSError:password=None;retry=True
+    if retrys==0 and retry:raise RuntimeError('Setup Error')
+    if TPM:
+        try:c.create_bytes('SFTP client password',password.encode('ascii'))
+        except:pass
     storage.on("write",lambda key, data: print(f"[WRITE] {key} ({len(data)} bytes)"),)
     storage.on("read",lambda key: print(f"[READ] {key}"),)
     storage.on("delete",lambda key: print(f"[DELETE] {key}"),)

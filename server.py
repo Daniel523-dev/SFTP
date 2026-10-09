@@ -1,6 +1,53 @@
-import json, os, shutil, time, network
+import json, os, shutil, time, network, getpass, sys, traceback
 SHARED_DIR = os.path.expanduser("~/Shared")
 CHUNK_SIZE = 12 * 1024 * 1024
+if os.name == "nt":
+    import msvcrt
+else:
+    import select
+    import termios
+    import tty
+def get_optional_password(text, timeout=15):
+    if not sys.stdin.isatty() or not sys.stdout.isatty():return None
+    if os.name == "nt":
+        print(text, end="", flush=True)
+        password = ""
+        start = time.monotonic()
+        while time.monotonic() - start < timeout:
+            if msvcrt.kbhit():
+                char = msvcrt.getwch()
+                if char in ("\r", "\n"):
+                    print()
+                    return password or None
+                elif char == "\x03":raise KeyboardInterrupt
+                elif char == "\b":password = password[:-1]
+                else:password += char
+            time.sleep(0.05)
+        print()
+        return None
+    fd = sys.stdin.fileno()
+    old_settings = termios.tcgetattr(fd)
+    try:
+        tty.setraw(fd)
+        print(text, end="", flush=True)
+        password = ""
+        start = time.monotonic()
+        while time.monotonic() - start < timeout:
+            remaining = timeout - (time.monotonic() - start)
+            ready, _, _ = select.select([fd], [], [], remaining)
+            if not ready:
+                print()
+                return None
+            char = os.read(fd, 1).decode("utf-8", errors="ignore")
+            if char in ("\r", "\n"):
+                print()
+                return password or None
+            elif char == "\x03":raise KeyboardInterrupt
+            elif char in ("\x7f", "\b"):password = password[:-1]
+            else:password += char
+        print()
+        return None
+    finally:termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 def safe_path(base_dir, req_path):
     """Ensure the requested path stays strictly inside the shared directory."""
     base = os.path.realpath(base_dir)
@@ -17,7 +64,9 @@ class FileServer:
         if not password:raise ValueError("Server password is required.")
         self.shared_dir = SHARED_DIR
         os.makedirs(self.shared_dir, exist_ok=True)
-        self.server = network.TCPServer(host=host,port=port,password=password,auth_key_password=auth_key_password,auth_key_dir=key_dir,salt_file=salt_file,on_exchange=self.handle_exchange,)
+        try:
+            self.server = network.TCPServer(host=host,port=port,password=password,auth_key_password=auth_key_password,auth_key_dir=key_dir,salt_file=salt_file,on_exchange=self.handle_exchange,)
+        except Exception as e:traceback.print_exception(e);raise OSError
         print(f"[*] File Server active on tcp://{host}:{port} | Serving: {self.shared_dir}")
     def handle_exchange(self, server_inst, eid, data, cid):
         try:
@@ -117,9 +166,35 @@ class FileServer:
             except Exception:pass
 if __name__ == "__main__":
     import getpass
-    password = getpass.getpass("Server password: ")
-    auth_key_password = getpass.getpass("Auth key password: ")
-    srv = FileServer(password=password,auth_key_password=auth_key_password)
+    TPM=False
+    try:import TPM_client;TPM=True
+    except:pass
+    password=None
+    if TPM:
+        try:
+            c=TPM_client.TPMClient()
+            password=c.get_bytes('SFTP server password')['value'].decode("ascii")
+        except ConnectionError:print('Failed to connect to TPM server. Is TPM.exe running?')
+        except:pass
+    retry=True
+    retrys=10
+    while retry and retrys>0:
+        retrys-=1
+        retry=False
+        if password == None:password = getpass.getpass("Server password: ")
+        auth_key_password = get_optional_password("Auth key password: ")
+        if auth_key_password==None:auth_key_password=''
+        if not isinstance(password,str):raise TypeError('password must be a string')
+        if not isinstance(auth_key_password,str):raise TypeError('auth_key_password must be a string')
+        try:
+            srv = FileServer(password=password,auth_key_password=auth_key_password)
+        except OSError:
+            retry=True
+            password=None
+    if retrys==0 and retry:raise RuntimeError('Setup Error')
+    if TPM:
+        try:c.create_bytes('SFTP server password',password.encode('ascii'))
+        except:pass
     try:
         while True:time.sleep(1)
     except KeyboardInterrupt:
