@@ -1,4 +1,4 @@
-import json, os, sys, getpass, traceback
+import json, os, sys, getpass, traceback, time
 CHUNK_SIZE = 12 * 1024 * 1024
 if sys.platform == "win32":
     import winfuse2 as mount_backend
@@ -163,22 +163,29 @@ if __name__ == "__main__":
             password=c.get_bytes('SFTP client password')['value'].decode("ascii")
         except ConnectionError:print('Failed to connect to TPM server. Is TPM.exe running?')
         except:pass
+    if TPM:
+        try:ip = c.get_bytes("SFTP client host IP")["value"].decode("ascii")
+        except:ip = ""
+    ip = input(f"Host IP [{ip}]: ").strip() or ip
+    if not ip:raise RuntimeError("Host IP required")
     retry=True
     retrys=10
     while retry and retrys>0:
         retrys-=1
         retry=False
         if password==None:password = getpass.getpass("Client password: ")
-        try:storage = RemoteStorage(key_path=key_path,password=password,auth_key_password_callback=auth_key_password_callback)
+        try:storage = RemoteStorage(host=ip,key_path=key_path,password=password,auth_key_password_callback=auth_key_password_callback)
         except OSError:password=None;retry=True
     if retrys==0 and retry:raise RuntimeError('Setup Error')
     if TPM:
         try:c.create_bytes('SFTP client password',password.encode('ascii'))
         except:pass
-    storage.on("write",lambda key, data: print(f"[WRITE] {key} ({len(data)} bytes)"),)
+        try: c.create_bytes("SFTP client host IP", ip.encode("ascii"))
+        except: pass
+    storage.on("write",lambda key, data: print(f"[WRITE] {key} ({len(data)} bytes) {time.time()}"),)
     storage.on("read",lambda key: print(f"[READ] {key}"),)
     storage.on("delete",lambda key: print(f"[DELETE] {key}"),)
-    mount_point = os.path.expanduser("~/mount") if PLATFORM == "windows" else "/mnt/remote-storage"
+    mount_point = r"C:\Users\murphy2607\mount" if PLATFORM == "windows" else "/mnt/remote-storage"
     os.makedirs(mount_point, exist_ok=True)
     if PLATFORM == "windows":
         print(f"[*] Starting WinFUSE at {mount_point}...")
