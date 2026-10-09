@@ -23,9 +23,9 @@ Install a compatible version of Python and ensure Python and pip are available f
 
 Install the required packages:
 
-???shell
+```shell
 python -m pip install cryptography argon2-cffi numpy pyzmq blake3 zxcvbn
-???
+```
 
 On Linux, use `python3` instead of `python` if required by your distribution.
 
@@ -53,9 +53,9 @@ Place both files in the same directory as the server files.
 
 Install the additional dependencies:
 
-???shell
+```shell
 python -m pip install zstandard pywin32
-???
+```
 
 Psudo-TPM relies on the Windows Data Protection API (DPAPI), so this integration is not supported on Linux.
 
@@ -65,9 +65,9 @@ If you enabled Psudo-TPM, **launch TPM.exe before starting the server**. The TPM
 
 Start the server from its installation directory:
 
-???shell
+```shell
 python server.py
-???
+```
 
 Follow the startup prompts to configure the server's passwords.
 
@@ -95,15 +95,15 @@ Install a compatible version of Python and ensure pip is available.
 
 **Windows**
 
-???shell
+```shell
 python -m pip install watchdog pyzmq zxcvbn cryptography argon2-cffi blake3
-???
+```
 
 **Linux**
 
-???shell
+```shell
 python3 -m pip install fusepy pyzmq zxcvbn cryptography argon2-cffi blake3
-???
+```
 
 The Linux client uses FUSE to expose remote storage through a filesystem mount point. Depending on your distribution, you may also need to install system-level FUSE packages and configure the required permissions.
 
@@ -136,9 +136,9 @@ Place both files in the same directory as the client files.
 
 Install the additional dependencies:
 
-???shell
+```shell
 python -m pip install zstandard pywin32
-???
+```
 
 Psudo-TPM relies on Windows DPAPI and is not supported on Linux. Linux users can run the client without this optional component.
 
@@ -166,9 +166,9 @@ This section describes the initial authorization process for a new client. It re
 2. When prompted, configure a secure authentication key password.
 3. Locate the generated authentication key at:
 
-   ???
+   ```
    ./keys/auth_key
-   ???
+   ```
 
 4. Transfer a copy of this file to the client user.
 5. Communicate the corresponding authentication key password through a separate, trusted channel.
@@ -181,9 +181,9 @@ The authentication key password is distinct from the master server password. Kee
 2. Place the file in the client's current working directory — the directory from which you will launch the client.
 3. Ensure the file is named:
 
-   ???
+   ```
    auth_key
-   ???
+   ```
 
 4. Confirm that the key was issued for your authorization attempt and has not been invalidated.
 
@@ -195,15 +195,15 @@ From the client installation directory, run:
 
 **Windows**
 
-???shell
+```shell
 python client.py
-???
+```
 
 **Linux**
 
-???shell
+```shell
 python3 client.py
-???
+```
 
 Follow the startup prompts.
 
