@@ -1,334 +1,314 @@
 # SFTP Program Setup Guide
 
-This guide explains how to set up the SFTP server and client, configure password autofill using Psudo-TPM (optional), and authorize new clients to connect to the server.
+This guide covers server and client installation, optional Psudo-TPM password autofill, client authorization, storage locations, and security considerations.
 
 ## Table of Contents
 
 - [1. Server Setup](#1-server-setup)
 - [2. Client Setup](#2-client-setup)
-- [3. Granting Client Access](#3-granting-client-access)
+- [3. Authorizing a Client](#3-authorizing-a-client)
 - [4. Storage Locations](#4-storage-locations)
-- [5. Security Notes](#5-security-notes)
-- [Client Capacity and Scalability](#client-capacity-and-scalability)
+- [5. Security Considerations](#5-security-considerations)
+- [6. Client Capacity and Scalability](#6-client-capacity-and-scalability)
+
 ---
 
 ## 1. Server Setup
 
-The server can run on either Windows or Linux.
+The server supports Windows and Linux.
 
-### Step 0: Install Python and Dependencies
+### 1.1 Install Python and Dependencies
 
-Install a compatible Python version on the server. Ensure Python and pip are available from your terminal.
+Install a compatible version of Python and ensure Python and pip are available from your terminal.
 
-Install the following Python packages:
+Install the required packages:
 
-- cryptography
-- argon2-cffi
-- numpy
-- pyzmq
-- blake3
-- zxcvbn
+???shell
+python -m pip install cryptography argon2-cffi numpy pyzmq blake3 zxcvbn
+???
 
-You can install these dependencies with pip:
-```shell
-    python -m pip install cryptography argon2-cffi numpy pyzmq blake3 zxcvbn
-```
-On Linux, you may need to use python3 instead of python, depending on your distribution.
+On Linux, use `python3` instead of `python` if required by your distribution.
 
-### Step 1: Download the Server Files
+### 1.2 Download the Server Files
 
-Download the following Python source files and place them together in the same directory:
+Download the following files and place them together in the same directory:
 
 - Encryption.py
 - network.py
 - server.py
 - util.py
 
-If these files are hosted in a Git repository, you can obtain them by cloning the repository or downloading its source files. If you download an archive, extract its contents before continuing.
+If the files are hosted in a Git repository, clone the repository or download and extract its source archive.
 
-### Step 2: Configure Optional Password Autofill
+### 1.3 Configure Optional Psudo-TPM Password Autofill
 
-This step is optional. Skip it if you do not want to use password autofill.
+**This step is optional and available only on Windows.** Skip it if you do not need password autofill.
 
-To enable password autofill, download the following files:
+Download the following files from the [Psudo-TPM repository](https://github.com/Daniel523-dev/Psudo-TPM):
 
-- TPM.exe — the latest release from the Psudo-TPM repository.
+- TPM.exe — the latest release.
 - TPM_client.py — the corresponding client-side Python module.
 
-Repository: https://github.com/Daniel523-dev/Psudo-TPM
+Place both files in the same directory as the server files.
 
-Place both files in the same directory as the server files downloaded in Step 1.
+Install the additional dependencies:
 
-**Platform limitation:** Psudo-TPM relies on Windows Data Protection API (DPAPI), so this feature is available only on Windows.
+???shell
+python -m pip install zstandard pywin32
+???
 
-### Step 2.5: Install Additional Psudo-TPM Dependencies
+Psudo-TPM relies on the Windows Data Protection API (DPAPI), so this integration is not supported on Linux.
 
-This step is required only if you enabled Psudo-TPM in Step 2.
+### 1.4 Start the Server
 
-Install the following Python packages:
+If you enabled Psudo-TPM, **launch TPM.exe before starting the server**. The TPM process must be running whenever the server starts or restarts.
 
-- zstandard
-- pywin32
+Start the server from its installation directory:
 
-Run:
-```shell
-    python -m pip install zstandard pywin32
-```
-These dependencies are intended for the Windows Psudo-TPM integration and are not required when password autofill is disabled.
+???shell
+python server.py
+???
 
-### Step 3: Start the Server
+Follow the startup prompts to configure the server's passwords.
 
-Launch the server using the appropriate command for your environment.
+### 1.5 Configure the Master Server Password
 
-Start the server by running:
-```shell
-    python server.py
-```
-Follow any prompts displayed during startup.
+When prompted, create a **strong, unique master server password**. This password protects the server's master key material and must not be reused for other accounts or services.
 
-### Step 4: Configure the Master Server Password
+The server may also prompt for an authentication key password, which is used when authorizing new clients. This password is separate from the master server password.
 
-When prompted, create a master server password.
+If a sufficiently strong master password is not provided, the server disables new-client bootstrapping. This is useful when no additional clients are expected, as it reduces exposure to denial-of-service (DoS) attacks against the enrollment process.
 
-**Choose a very strong, unique password.** This password protects the server's master key material and should not be reused for other accounts or services.
+If you intend to authorize new clients, ensure the server permits bootstrapping and follow [Section 3: Authorizing a Client](#3-authorizing-a-client).
 
-An authentication key password is not required for normal server operation. However, if a sufficiently strong master password is not provided, the server disables new-client bootstrapping.
-
-This restriction is useful when you do not intend to authorize additional clients. Disabling bootstrapping reduces the server's exposure to denial-of-service (DoS) attacks targeting the client enrollment process.
-
-The server setup is now complete.
+The server is now configured.
 
 ---
 
 ## 2. Client Setup
 
-The client can run on Windows or Linux. Some dependencies and source files differ by operating system.
+The client supports Windows and Linux. Install the appropriate dependencies and filesystem integration for your operating system.
 
-### Step 0: Install Python and Dependencies
+### 2.1 Install Python and Dependencies
 
-Install a compatible Python version and ensure pip is available.
+Install a compatible version of Python and ensure pip is available.
 
-#### Windows
+**Windows**
 
-Install the following packages:
+???shell
+python -m pip install watchdog pyzmq zxcvbn cryptography argon2-cffi blake3
+???
 
-- watchdog
-- pyzmq
-- zxcvbn
-- cryptography
-- argon2-cffi
-- blake3
+**Linux**
 
-Run:
-```shell
-    python -m pip install watchdog pyzmq zxcvbn cryptography argon2-cffi blake3
-```
-#### Linux
+???shell
+python3 -m pip install fusepy pyzmq zxcvbn cryptography argon2-cffi blake3
+???
 
-Install the following packages:
+The Linux client uses FUSE to expose remote storage through a filesystem mount point. Depending on your distribution, you may also need to install system-level FUSE packages and configure the required permissions.
 
-- fusepy
-- pyzmq
-- zxcvbn
-- cryptography
-- argon2-cffi
-- blake3
+### 2.2 Download the Client Files
 
-Run:
-```shell
-    python3 -m pip install fusepy pyzmq zxcvbn cryptography argon2-cffi blake3
-```
-The Linux client uses FUSE to expose remote storage through a filesystem mount point. Depending on your distribution, you may also need to install the appropriate system-level FUSE packages and configure the required permissions.
-
-### Step 1: Download the Client Files
-
-Download the following Python source files and place them together in the client directory:
+Download the following files and place them together in the client directory:
 
 - Encryption.py
 - network.py
 - client.py
 - util.py
 
-Additionally, download the platform-specific filesystem integration:
+Also download the filesystem integration for your operating system:
 
-- **Linux:** vfs.py
 - **Windows:** winfuse2.py
+- **Linux:** vfs.py
 
-If the source files are hosted in a Git repository, you can clone the repository or download and extract its source archive.
+If the files are hosted in a Git repository, clone the repository or download and extract its source archive.
 
-### Step 2: Configure Optional Password Autofill
+### 2.3 Configure Optional Psudo-TPM Password Autofill
 
-This step is optional.
+**This step is optional and available only on Windows.** Skip it if you do not need password autofill.
 
-To enable password autofill, download the following files from the Psudo-TPM repository:
+Download the following files from the [Psudo-TPM repository](https://github.com/Daniel523-dev/Psudo-TPM):
 
 - TPM.exe — the latest release.
-- TPM_client.py — the client-side Python module.
+- TPM_client.py — the corresponding client-side Python module.
 
-Repository: https://github.com/Daniel523-dev/Psudo-TPM
+Place both files in the same directory as the client files.
 
-Place both files in the same directory as the client files downloaded in Step 1.
+Install the additional dependencies:
 
-**Important:** Psudo-TPM relies on Windows DPAPI and therefore works only on Windows. Do not expect this feature to work on Linux.
+???shell
+python -m pip install zstandard pywin32
+???
 
-### Step 2.5: Install Additional Psudo-TPM Dependencies
+Psudo-TPM relies on Windows DPAPI and is not supported on Linux. Linux users can run the client without this optional component.
 
-If you enabled Psudo-TPM, install:
+### 2.4 Obtain Authorization from the Server Administrator
 
-- zstandard
-- pywin32
+Before connecting for the first time, contact the server administrator and request authorization.
 
-Run:
-```shell
-    python -m pip install zstandard pywin32
-```
-Skip this step if you are not using Psudo-TPM.
+The administrator must provide an authentication key file and its corresponding password through a separate, trusted communication channel. This process is called **out-of-band authorization**.
 
-### Step 3: Request Server Access
+Do not attempt to bootstrap the client until you have received both items. The administrator must coordinate the authorization process because authentication keys are single-use and can become invalid.
 
-Contact the server administrator and request authorization to connect.
-
-Client authorization is handled out-of-band, meaning the authorization credentials are exchanged through a separate communication channel rather than through the normal SFTP connection.
-
-The administrator must complete the server-side authorization procedure in the next section before you can bootstrap your client.
+Follow [Section 3: Authorizing a Client](#3-authorizing-a-client) for the complete procedure.
 
 ---
 
-## 3. Granting Client Access
+## 3. Authorizing a Client
 
-This section describes how the server administrator authorizes a new client.
+This section describes the initial authorization process for a new client. It requires coordination between the server administrator and the client user.
 
-### Server Administrator Instructions
+**Important:** Authentication keys are single-use. Coordinate key distribution and client bootstrapping so the key is not invalidated before it can be used.
 
-#### Step 1: Restart the Server
+### 3.1 Server Administrator: Prepare the Authentication Key
 
-Restart the server to begin the client authorization process.
+1. Restart the server to begin the authorization process.
+2. When prompted, configure a secure authentication key password.
+3. Locate the generated authentication key at:
 
-#### Step 2: Configure an Authentication Key Password
+   ???
+   ./keys/auth_key
+   ???
 
-During startup, enter a secure authentication key password when prompted.
+4. Transfer a copy of this file to the client user.
+5. Communicate the corresponding authentication key password through a separate, trusted channel.
 
-The authentication key password has lower strength requirements than the master server password, but it should still be difficult to guess and kept confidential.
+The authentication key password is distinct from the master server password. Keep it confidential, and never send the key and its password together through an untrusted channel.
 
-This password protects the temporary authorization key used during client bootstrapping.
+### 3.2 Client User: Install the Authentication Key
 
-#### Step 3: Transfer the Authentication Key to the Client
+1. Obtain the authentication key file and its password from the administrator.
+2. Place the file in the client's current working directory — the directory from which you will launch the client.
+3. Ensure the file is named:
 
-Give the client a copy of the following file:
-```
-    ./keys/auth_key
-```
-Communicate the corresponding authentication key password to the client through a separate, trusted channel.
+   ???
+   auth_key
+   ???
 
-Do not send the key and its password through an untrusted channel.
+4. Confirm that the key was issued for your authorization attempt and has not been invalidated.
 
-### Important: Authentication Keys Are Single-Use
+### 3.3 Client User: Start the Client
+
+If you enabled Psudo-TPM, **launch TPM.exe before starting the client**. The TPM process must be running whenever you launch or restart the client.
+
+From the client installation directory, run:
+
+**Windows**
+
+???shell
+python client.py
+???
+
+**Linux**
+
+???shell
+python3 client.py
+???
+
+Follow the startup prompts.
+
+### 3.4 Client User: Configure the Master Client Password
+
+When prompted, create a **strong, unique master client password**. This password protects the client's master key material.
+
+Keep it secure and do not reuse the master server password or passwords from unrelated accounts.
+
+### 3.5 Client User: Complete Bootstrapping
+
+When prompted, enter the authentication key password provided by the administrator.
+
+If the authentication key is valid and the bootstrapping process succeeds, the client will complete its initial authorization.
+
+**Important:** During bootstrapping, the client overwrites its local auth_key file. Make sure the correct authorization key is in the working directory before starting the client.
+
+### 3.6 Authentication Key Lifecycle
 
 The server invalidates and discards its current authentication key whenever the server restarts or a client attempts to bootstrap.
 
-Consequently:
+As a result:
 
 - Each authentication key is valid for a single bootstrapping attempt.
-- A key may become invalid before it is used if the server restarts.
-- A key may become invalid if another client attempts to bootstrap first.
-- If a key is invalidated, the administrator must generate and distribute a new one.
+- Restarting the server may invalidate an unused key.
+- Another client's bootstrapping attempt may invalidate the key before you use it.
+- If a key becomes invalid, the administrator must generate and distribute a new one.
 
-**Always coordinate the key transfer and bootstrapping process with the server administrator.** Do not assume an authentication key remains valid indefinitely.
+If bootstrapping fails because the key is invalid, contact the administrator before trying again. Do not assume that a previously issued key remains valid.
 
-### Client Instructions
-
-#### Step 1: Obtain the Authentication Key
-
-Obtain the authentication key file and its password from the administrator through the agreed out-of-band communication channel.
-
-Place the file in the client's current working directory (the directory from which the SFTP client will be launched).
-
-The file should be named:
-```
-    auth_key
-```
-#### Step 2: Start the SFTP Client
-
-Launch the client using the appropriate command for your environment.
-
-Start the client by running:
-```shell
-    python client.py
-```
-On Linux, you may need to use python3 instead.
-
-#### Step 3: Configure the Master Client Password
-
-When prompted, create a master client password.
-
-**Choose a very strong, unique password.** This password protects the client's master key material.
-
-Keep this password safe. Do not reuse your server password or an unrelated account password.
-
-#### Step 4: Enter the Authentication Key Password
-
-When prompted, enter the authentication key password provided by the server administrator.
-
-If the key is valid and the bootstrapping process succeeds, the client will complete its initial authorization.
-
-**Note:** During bootstrapping, the client overwrites its local auth_key file. Make sure you have placed the correct authorization key in the client's working directory before starting the process.
+Once bootstrapping succeeds, the client has completed its initial authorization and can proceed to use the remote storage.
 
 ---
 
 ## 4. Storage Locations
 
-The server and client use the following default storage locations.
+The following table lists the default storage locations.
 
-| Component | Operating system | Location |
+| Component | Operating System | Default Location |
 |---|---|---|
 | Server shared files | Windows or Linux | ~/Shared |
 | Client mount point | Linux | /mnt/remote-storage |
 | Client mount point | Windows | ~/mount |
 
-The server stores its shared files under ~/Shared. The client accesses remote storage through its operating-system-specific mount point.
+The server stores shared files under ~/Shared. The client accesses remote storage through the mount point for its operating system.
 
-On Linux, ~/ denotes the current user's home directory. On Windows, the equivalent home-directory notation depends on the environment in which the application runs.
+On Linux, ~/ refers to the current user's home directory. On Windows, the effective home directory depends on the environment in which the application runs.
 
 ---
 
-## 5. Security Notes
+## 5. Security Considerations
 
-Keep the following security considerations in mind when deploying the program.
+### 5.1 Passwords
 
-### Password Strength
+- Use strong, unique master server and master client passwords.
+- Protect authentication key passwords and share them only with authorized users.
+- Never reuse passwords across unrelated systems.
+- Do not confuse the master server password, master client password, and authentication key password. They serve different purposes.
 
-- Use a very strong master server password.
-- Use a very strong master client password.
-- Protect authentication key passwords and do not share them unnecessarily.
-- Avoid reusing passwords across systems.
-
-### Client Authorization
+### 5.2 Client Authorization
 
 - New clients must be authorized by the server administrator.
-- Authorization credentials are transferred out-of-band.
-- Authentication keys are single-use and are invalidated when the server restarts or a client attempts to bootstrap.
-- Disabling new-client bootstrapping when no new clients are expected reduces exposure to denial-of-service attacks against the enrollment process.
+- Transfer authentication keys and their passwords through separate, trusted channels.
+- Authentication keys are single-use and may be invalidated by server restarts or other bootstrapping attempts.
+- Disable new-client bootstrapping when additional clients are not expected, where supported by the server configuration, to reduce exposure to enrollment-related DoS attacks.
 
-### Encryption at Rest
+### 5.3 Encryption at Rest
 
-All keys are protected with data-at-rest encryption.
+The program protects key material using data-at-rest encryption.
 
-This helps protect stored key material if the underlying storage is accessed without authorization. It does not eliminate the need to secure passwords, restrict filesystem access, protect running processes, and maintain control over the server and client machines.
+This helps protect stored keys if the underlying storage is accessed without authorization. However, it does not eliminate the need to protect passwords, restrict filesystem access, secure running processes, and maintain control over the server and client machines.
 
-## Client Capacity and Scalability
+### 5.4 Psudo-TPM Compatibility
 
-The protocol is designed to support up to 2^512 clients in principle. However, this is a theoretical capacity, not a practical performance guarantee.
+Psudo-TPM is an optional password-autofill integration that relies on Windows DPAPI.
 
-In practice, performance may begin to degrade as the number of clients approaches approximately 100–200, depending on the server's hardware, available memory, CPU performance, network bandwidth, and workload.
+- **Windows:** Psudo-TPM can be used if its files and dependencies are installed.
+- **Linux:** The SFTP client can operate without Psudo-TPM.
 
-The actual number of clients the server can handle efficiently depends on usage patterns and system resources. For production deployments, test the server under realistic workloads to determine an appropriate client limit for your hardware.
-
-### Psudo-TPM Compatibility
-
-Psudo-TPM is optional and relies on Windows DPAPI. Its password-autofill integration is therefore Windows-only.
-
-Linux users can operate the SFTP client without this optional component.
+When enabled, TPM.exe must be running before the server or client is launched.
 
 ---
 
-**Setup is complete** once the server is running, the client has been authorized, and the client has successfully completed bootstrapping.
+## 6. Client Capacity and Scalability
+
+The protocol is designed to support up to 2^512 clients in principle. This is a theoretical capacity, not a practical performance guarantee.
+
+In practice, performance may begin to degrade as the number of clients approaches approximately 100–200. Actual performance depends on factors such as:
+
+- CPU performance and available memory.
+- Network bandwidth and latency.
+- Client activity and workload.
+- Server hardware and resource contention.
+
+For production deployments, test the server under realistic workloads to determine an appropriate client limit for your environment.
+
+---
+
+## Setup Complete
+
+Setup is complete when:
+
+1. The server is running with its master password configured.
+2. The client has received valid authorization credentials.
+3. The client has successfully completed bootstrapping.
+4. The client can access the remote storage through its configured mount point.
+
+Psudo-TPM is optional and is not required for normal SFTP client operation.
