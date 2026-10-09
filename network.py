@@ -1,4 +1,4 @@
-import os, queue, time, hmac, zmq, threading, zipfile, Encryption, util, traceback
+import os, queue, time, hmac, zmq, threading, zipfile, Encryption, util
 from zxcvbn import zxcvbn
 from concurrent.futures import ThreadPoolExecutor
 MAX_QUEUE_BYTES = 256 * 1024 * 1024
@@ -169,9 +169,7 @@ class TCPServer:
                 self._handshakes.pop(cid, None)
                 self.acids[cid] = _hash
                 self.zcids[_hash] = cid
-        except Exception as e:
-            traceback.print_exception(e)
-            self._kill_client(cid)
+        except Exception as e:self._kill_client(cid)
     def _kill_client(self, cid):
         with self._lock:
             self._keys.pop(cid, None)
