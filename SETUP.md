@@ -71,9 +71,9 @@ Install the following Python packages:
 - pywin32
 
 Run:
-???shell
+```shell
     python -m pip install zstandard pywin32
-???
+```
 These dependencies are intended for the Windows Psudo-TPM integration and are not required when password autofill is disabled.
 
 ### Step 3: Start the Server
@@ -81,9 +81,9 @@ These dependencies are intended for the Windows Psudo-TPM integration and are no
 Launch the server using the appropriate command for your environment.
 
 Start the server by running:
-???shell
+```shell
     python server.py
-???
+```
 Follow any prompts displayed during startup.
 
 ### Step 4: Configure the Master Server Password
@@ -120,9 +120,9 @@ Install the following packages:
 - blake3
 
 Run:
-???shell
+```shell
     python -m pip install watchdog pyzmq zxcvbn cryptography argon2-cffi blake3
-???
+```
 #### Linux
 
 Install the following packages:
@@ -135,9 +135,9 @@ Install the following packages:
 - blake3
 
 Run:
-???shell
+```shell
     python3 -m pip install fusepy pyzmq zxcvbn cryptography argon2-cffi blake3
-???
+```
 The Linux client uses FUSE to expose remote storage through a filesystem mount point. Depending on your distribution, you may also need to install the appropriate system-level FUSE packages and configure the required permissions.
 
 ### Step 1: Download the Client Files
@@ -179,9 +179,9 @@ If you enabled Psudo-TPM, install:
 - pywin32
 
 Run:
-???shell
+```shell
     python -m pip install zstandard pywin32
-???
+```
 Skip this step if you are not using Psudo-TPM.
 
 ### Step 3: Request Server Access
@@ -215,9 +215,9 @@ This password protects the temporary authorization key used during client bootst
 #### Step 3: Transfer the Authentication Key to the Client
 
 Give the client a copy of the following file:
-???
+```
     ./keys/auth_key
-???
+```
 Communicate the corresponding authentication key password to the client through a separate, trusted channel.
 
 Do not send the key and its password through an untrusted channel.
@@ -244,17 +244,17 @@ Obtain the authentication key file and its password from the administrator throu
 Place the file in the client's current working directory (the directory from which the SFTP client will be launched).
 
 The file should be named:
-???
+```
     auth_key
-???
+```
 #### Step 2: Start the SFTP Client
 
 Launch the client using the appropriate command for your environment.
 
 Start the client by running:
-???shell
+```shell
     python client.py
-???
+```
 On Linux, you may need to use python3 instead.
 
 #### Step 3: Configure the Master Client Password
