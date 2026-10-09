@@ -12,6 +12,17 @@ The project is broken down into several modular components. For detailed instruc
 * **Networking** (`network-README.md`): Explanation of the custom TCP packet framing and streaming protocol used for zero-knowledge data transfer.
 * **Linux Mount** (`vfs-README.md`): Details on the POSIX-compliant FUSE bridge for Unix-like systems.
 * **Windows Mount** (`winfuse2-README.md`): Details on the Windows virtual drive integration, which is powered by the Windows Cloud Files API (`cfAPI`) rather than traditional FUSE.
+## Optional: TPM Autofill Integration
+
+Optional autofill functionality is provided by the separate Psudo-TPM repository, available at:
+```url
+https://github.com/Daniel523-dev/Psudo-TPM
+```
+This component is not included in this repository and must be obtained separately.
+
+To enable autofill, follow the setup instructions in the Psudo-TPM repository and place both `TPM.exe` and `TPM_client.py` in the current working directory on **both the server and client machines**.
+
+The TPM integration is entirely optional and is not required for the core encrypted file storage, network communication, or drive-mounting functionality.
 
 ## License
 
