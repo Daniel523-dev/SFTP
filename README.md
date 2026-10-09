@@ -2,6 +2,10 @@
 
 Welcome to the Secure File Transfer project. This repository contains a complete, end-to-end encrypted remote file storage ecosystem. It allows you to host a secure file server and mount it on client machines (Windows and Linux) as a native local drive. Files are encrypted and decrypted on the fly in memory, ensuring that your data remains secure both in transit and at rest.
 
+## Setup and Installation
+
+For detailed instructions on setting up, installing, and configuring the project, please refer to the `SETUP.md` file in the root directory of this repository. Follow the instructions in that document to prepare the environment and get the system running.
+
 ## Project Structure & Documentation
 
 The project is broken down into several modular components. For detailed instructions on how to use, configure, or develop each piece, please refer to their respective README files:
