@@ -1,4 +1,4 @@
-import json, os, shutil, time, network, getpass, sys, traceback
+import json, os, shutil, time, network, getpass, sys, traceback, socket
 SHARED_DIR = os.path.expanduser("~/Shared")
 CHUNK_SIZE = 12 * 1024 * 1024
 if os.name == "nt":
@@ -165,7 +165,12 @@ class FileServer:
                 server_inst.send(resp,eid=eid,client_id=cid,)
             except Exception:pass
 if __name__ == "__main__":
-    import getpass
+    IP="127.0.0.1"
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            IP = s.getsockname()[0]
+    except:pass
     TPM=False
     try:import TPM_client;TPM=True
     except:pass
@@ -187,7 +192,7 @@ if __name__ == "__main__":
         if not isinstance(password,str):raise TypeError('password must be a string')
         if not isinstance(auth_key_password,str):raise TypeError('auth_key_password must be a string')
         try:
-            srv = FileServer(password=password,auth_key_password=auth_key_password)
+            srv = FileServer(IP,password=password,auth_key_password=auth_key_password)
         except OSError:
             retry=True
             password=None
