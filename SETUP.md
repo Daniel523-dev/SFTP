@@ -96,13 +96,13 @@ Install a compatible version of Python and ensure pip is available.
 **Windows**
 
 ```shell
-python -m pip install watchdog pyzmq zxcvbn cryptography argon2-cffi blake3
+python -m pip install watchdog pyzmq zxcvbn cryptography argon2-cffi blake3 numpy
 ```
 
 **Linux**
 
 ```shell
-python3 -m pip install fusepy pyzmq zxcvbn cryptography argon2-cffi blake3
+python3 -m pip install fusepy pyzmq zxcvbn cryptography argon2-cffi blake3 numpy
 ```
 
 The Linux client uses FUSE to expose remote storage through a filesystem mount point. Depending on your distribution, you may also need to install system-level FUSE packages and configure the required permissions.
