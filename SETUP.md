@@ -30,9 +30,9 @@ Install the following Python packages:
 - zxcvbn
 
 You can install these dependencies with pip:
-
+```shell
     python -m pip install cryptography argon2-cffi numpy pyzmq blake3 zxcvbn
-
+```
 On Linux, you may need to use python3 instead of python, depending on your distribution.
 
 ### Step 1: Download the Server Files
