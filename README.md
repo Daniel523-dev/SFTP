@@ -1,6 +1,6 @@
-# Secure Encrypted FUSE Ecosystem
+# Secure Encrypted SFTP
 
-Welcome to the Secure FUSE File System project. This repository contains a complete, end-to-end encrypted remote file storage ecosystem. It allows you to host a secure file server and mount it on client machines (Windows and Linux) as a native local drive. Files are encrypted and decrypted on the fly in memory, ensuring that your data remains secure both in transit and at rest.
+Welcome to the Secure File Transfer project. This repository contains a complete, end-to-end encrypted remote file storage ecosystem. It allows you to host a secure file server and mount it on client machines (Windows and Linux) as a native local drive. Files are encrypted and decrypted on the fly in memory, ensuring that your data remains secure both in transit and at rest.
 
 ## Project Structure & Documentation
 
@@ -20,7 +20,7 @@ https://github.com/Daniel523-dev/Psudo-TPM
 ```
 This component is not included in this repository and must be obtained separately.
 
-To enable autofill, follow the setup instructions in the Psudo-TPM repository and place both `TPM.exe` and `TPM_client.py` in the current working directory on **both the server and client machines**.
+To enable autofill, download `TPM.exe` from the most recent release in the Psudo-TPM and download `TPM_client.py`. Place both `TPM.exe` and `TPM_client.py` in the current working directory on **both the server and client machines**.
 
 The TPM integration is entirely optional and is not required for the core encrypted file storage, network communication, or drive-mounting functionality.
 
