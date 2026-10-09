@@ -1,6 +1,5 @@
 import os, queue, time, hmac, zmq, threading, zipfile, Encryption, util
 from zxcvbn import zxcvbn
-from concurrent.futures import ThreadPoolExecutor
 MAX_QUEUE_BYTES = 256 * 1024 * 1024
 class ProtocolError(Exception):pass
 SALT_SIZE = 64
@@ -43,7 +42,6 @@ def validate_auth_keys(d, at_rest_key):
 class TCPServer:
     def __init__(self, host, port, password, auth_key_password, auth_key_dir="./keys", salt_file="./server_salt.bin", on_exchange=None):
         self.auth_key_dir = auth_key_dir
-        self.pool = ThreadPoolExecutor(4)
         self.on_exchange = on_exchange
         self.auth_key_password = None
         admin_zip_path = os.path.join(self.auth_key_dir, "auth_key")
@@ -65,7 +63,7 @@ class TCPServer:
         self.context = zmq.Context()
         self.sock = self.context.socket(zmq.ROUTER)
         self.sock.bind(f"tcp://{host}:{port}")
-        self._eid_map, self._keys, self._handshakes, self._counters, self._recv_counters = {}, {}, {}, {}, {}
+        self._eid_map, self._keys, self._handshakes, self._counters, self._recv_counters, self.handshake_queue, self.handshake_lock = {}, {}, {}, {}, {}, queue.Queue(), threading.Lock()
         self._q_bytes = {}
         self._seen_eids = {}
         self.acids = {}
@@ -170,6 +168,8 @@ class TCPServer:
                 self.acids[cid] = _hash
                 self.zcids[_hash] = cid
         except Exception as e:self._kill_client(cid)
+        try:self.handshake_lock.release()
+        except:pass
     def _kill_client(self, cid):
         with self._lock:
             self._keys.pop(cid, None)
@@ -222,7 +222,7 @@ class TCPServer:
                         with self._lock:
                             if cid not in self._handshakes:
                                 self._handshakes[cid] = queue.Queue(25)
-                                self.pool.submit(self._hs_worker, cid, payload)
+                                self.handshake_queue.put((cid,payload))
                             else:self._handshakes[cid].put_nowait(payload)
                         continue
                     with self._lock:
@@ -252,6 +252,9 @@ class TCPServer:
                                 try:self.on_exchange(self, eid, data, acid)
                                 except Exception:pass
                             else:self._recv_q.put((eid, data, acid))
+                try:task=self.handshake_queue.get_nowait()
+                except:continue
+                if self.handshake_lock.acquire(False):threading.Thread(target=self._hs_worker, args=task).start()
             except Exception as e:self._kill_client(cid)
         try:
             poller.unregister(self.sock)
